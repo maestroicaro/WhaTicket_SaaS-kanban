@@ -1,11 +1,7 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:14-alpine
-    container_name: whaticket_postgres
-    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER:-whaticket}
       POSTGRES_PASSWORD: ${DB_PASS:-whaticket123}
@@ -25,8 +21,6 @@ services:
   # Redis Cache & Queue
   redis:
     image: redis:7-alpine
-    container_name: whaticket_redis
-    restart: unless-stopped
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis123} --appendonly yes
     volumes:
       - redis_data:/data
@@ -43,19 +37,9 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: whaticket_backend
-    restart: unless-stopped
-    ports:
-      - "${BACKEND_PORT:-8080}:8080"
     environment:
       # Node Environment
       NODE_ENV: ${NODE_ENV:-production}
-      
-      # Application URLs
-      BACKEND_URL: ${BACKEND_URL:-http://localhost:8080}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      PORT: 8080
-      PROXY_PORT: 8080
       
       # Database Configuration
       DB_DIALECT: postgres
@@ -65,43 +49,47 @@ services:
       DB_PASS: ${DB_PASS:-whaticket123}
       DB_NAME: ${DB_NAME:-whaticket}
       
-      # JWT Secrets
-      JWT_SECRET: ${JWT_SECRET:-CHANGE_ME_IN_PRODUCTION}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-CHANGE_ME_IN_PRODUCTION}
-      
       # Redis Configuration
       REDIS_URI: redis://:${REDIS_PASSWORD:-redis123}@redis:6379
       REDIS_OPT_LIMITER_MAX: ${REDIS_OPT_LIMITER_MAX:-1}
       REDIS_OPT_LIMITER_DURATION: ${REDIS_OPT_LIMITER_DURATION:-3000}
       
-      # Application Limits
+      # Application URLs
+      BACKEND_URL: ${BACKEND_URL:-http://localhost:8080}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      
+      # JWT Secrets
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      
+      # Application Settings
       USER_LIMIT: ${USER_LIMIT:-10000}
       CONNECTIONS_LIMIT: ${CONNECTIONS_LIMIT:-100000}
       CLOSED_SEND_BY_ME: ${CLOSED_SEND_BY_ME:-true}
       
-      # Payment Gateway (Optional)
+      # Optional Integrations
       GERENCIANET_SANDBOX: ${GERENCIANET_SANDBOX:-false}
       GERENCIANET_CLIENT_ID: ${GERENCIANET_CLIENT_ID:-}
       GERENCIANET_CLIENT_SECRET: ${GERENCIANET_CLIENT_SECRET:-}
-      GERENCIANET_PIX_CERT: ${GERENCIANET_PIX_CERT:-}
-      GERENCIANET_PIX_KEY: ${GERENCIANET_PIX_KEY:-}
-      
-      # Facebook Integration (Optional)
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
       
-      # Webhook
-      VERIFY_TOKEN: ${VERIFY_TOKEN:-whaticket}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
     volumes:
       - backend_public:/usr/src/app/public
       - backend_wwebjs:/usr/src/app/.wwebjs_auth
     networks:
       - whaticket-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "/usr/local/bin/healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
     labels:
       - "com.easypanel.service=backend"
 
@@ -114,28 +102,24 @@ services:
         REACT_APP_BACKEND_URL: ${BACKEND_URL:-http://localhost:8080}
         REACT_APP_HOURS_CLOSE_TICKETS_AUTO: ${HOURS_CLOSE_TICKETS_AUTO:-24}
         REACT_APP_FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
-    container_name: whaticket_frontend
-    restart: unless-stopped
-    ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    depends_on:
-      - backend
     networks:
       - whaticket-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
     labels:
       - "com.easypanel.service=frontend"
 
 networks:
-  whaticket-network:
-    driver: bridge
-    name: whaticket_network
+  whaticket-network: {}
 
 volumes:
-  postgres_data:
-    name: whaticket_postgres_data
-  redis_data:
-    name: whaticket_redis_data
-  backend_public:
-    name: whaticket_backend_public
-  backend_wwebjs:
-    name: whaticket_backend_wwebjs
+  postgres_data: {}
+  redis_data: {}
+  backend_public: {}
+  backend_wwebjs: {}
