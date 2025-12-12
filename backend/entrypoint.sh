@@ -51,10 +51,9 @@ else
 fi
 
 # Optionally run seeds in development
-if [ "$NODE_ENV" = "development" ]; then
-  echo "🌱 Running database seeds (development mode)..."
-  npm run db:seed || echo "⚠️  Seeds failed or already run"
-fi
+# Run seeds (ignoring errors if data exists)
+echo "🌱 Running database seeds..."
+npm run db:seed || echo "⚠️  Seeds failed or already run (skipping)"
 
 echo "🎉 Starting application..."
 
