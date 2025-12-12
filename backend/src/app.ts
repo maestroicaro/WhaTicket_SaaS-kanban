@@ -26,45 +26,9 @@ app.use(
   cors({
     credentials: true,
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_FRONTEND_URL];
-      if (allowedOrigins.indexOf(origin) === -1) {
-        // Fallback: If not matched, we can log it or choose to allow it for now
-        // For EasyPanel deployment safety, let's trust the configured FRONTEND_URL
-        // But if it fails, it might be a protocol mismatch (http vs https)
-        console.log(`[CORS] Request from origin: ${origin}`);
-        console.log(`[CORS] Allowed Configured: ${process.env.FRONTEND_URL}`);
-        
-        // Critical Fix: If origin matches the hosting domain but maybe protocol differs or something
-        // let's be generous if it matches the domain part.
-        // For now, let's STRICTLY respect FRONTEND_URL but ensure it's set on EasyPanel
-        
-        // DEBUG: Allow all for a moment to prove connectivity if user messed up ENV
-        // callback(null, true); 
-        
-        // PRODUCTION MODE:
-        if (origin === process.env.FRONTEND_URL) {
-            callback(null, true);
-        } else {
-             // To fix the user's specific issue where he might have a trailing slash or typo
-             // Let's rely on the Env Var being 100% match. 
-             // If USER set FRONTEND_URL=https://site.com/ (with slash), it fails matching https://site.com
-             const cleanOrigin = origin.replace(/\/$/, "");
-             const cleanFrontend = (process.env.FRONTEND_URL || "").replace(/\/$/, "");
-
-             if (cleanOrigin === cleanFrontend) {
-                 callback(null, true);
-             } else {
-                 // Final Fallback for debugging - remove in strict prod
-                 console.log("[CORS] BLOCKING REQUEST");
-                 callback(new Error('Not allowed by CORS'), false);
-             }
-        }
-      } else {
+        // PERMISSIVE MODE: Always allow.
+        // This reflects the origin header back to the client.
         callback(null, true);
-      }
     }
   })
 );
