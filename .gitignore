@@ -23,7 +23,9 @@ package-lock.json
 
 # Build output
 dist/
-build/
+# build/ <- Commented out to allow frontend build for EasyPanel
+!frontend/build/
+
 *.tsbuildinfo
 
 # Docker volumes data (if mounted locally)
