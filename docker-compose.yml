@@ -40,7 +40,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile.easypanel
+      dockerfile: Dockerfile
     container_name: whaticket-backend
     environment:
       # URLs
