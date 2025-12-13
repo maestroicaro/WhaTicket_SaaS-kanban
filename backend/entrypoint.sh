@@ -53,7 +53,7 @@ fi
 # Optionally run seeds in development
 # Run seeds (ignoring errors if data exists)
 echo "🌱 Running database seeds..."
-npm run db:seed || echo "⚠️  Seeds failed or already run (skipping)"
+npm run db:seed
 
 echo "🎉 Starting application..."
 
