@@ -1,23 +1,35 @@
-# ============================================
-# Frontend Nginx - Pre-Built Version
-# ============================================
-# This Dockerfile serves pre-compiled React files
-# Build is done locally to avoid VPS resource issues
+# Dockerfile otimizado para Frontend React
+FROM node:18-alpine as builder
 
+# Instalar dependências do sistema
+RUN apk add --no-cache bash
+
+# Criar diretório da aplicação
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar dependências
+RUN npm ci --only=production && npm cache clean --force
+
+# Copiar código fonte
+COPY . .
+
+# Build da aplicação
+RUN npm run build
+
+# Estágio de produção com Nginx
 FROM nginx:alpine
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Copiar build para nginx
+COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy pre-built files from local build
-COPY build /usr/share/nginx/html
+# Copiar configuração customizada do nginx
+COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Health check
-
-
+# Expor porta
 EXPOSE 80
 
+# Comando de inicialização
 CMD ["nginx", "-g", "daemon off;"]

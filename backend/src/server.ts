@@ -5,10 +5,38 @@ import { logger } from "./utils/logger";
 import { StartAllWhatsAppsSessions } from "./services/WbotServices/StartAllWhatsAppsSessions";
 import Company from "./models/Company";
 import { startQueueProcess } from "./queues";
+import { execSync } from "child_process";
 
 import Plan from "./models/Plan";
 import User from "./models/User";
 import { hash } from "bcryptjs";
+
+// Função para executar migrações automaticamente
+const runMigrationsAndSeeding = async () => {
+  try {
+    console.log("🔄 Executando migrações automáticas...");
+    
+    // Executar migrações
+    try {
+      execSync("npx sequelize db:migrate", { stdio: "inherit" });
+      console.log("✅ Migrações executadas com sucesso!");
+    } catch (error) {
+      console.log("⚠️ Migrações já executadas ou erro:", error.message);
+    }
+    
+    // Executar seeding
+    try {
+      execSync("npx sequelize db:seed:all", { stdio: "inherit" });
+      console.log("✅ Seeding executado com sucesso!");
+    } catch (error) {
+      console.log("⚠️ Seeding já executado ou erro:", error.message);
+    }
+    
+  } catch (error) {
+    console.log("⚠️ Erro nas migrações automáticas:", error.message);
+    console.log("🔄 Continuando com inicialização manual...");
+  }
+};
 
 const initSystem = async () => {
   try {
@@ -80,6 +108,9 @@ const initSystem = async () => {
 };
 
 const server = app.listen(process.env.PORT, async () => {
+  // Executar migrações automáticas primeiro
+  await runMigrationsAndSeeding();
+  
   await initSystem();
   
   const companies = await Company.findAll();

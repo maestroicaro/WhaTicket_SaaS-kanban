@@ -1,32 +1,35 @@
-services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:14-alpine
-    environment:
-      POSTGRES_USER: ${DB_USER:-whaticket}
-      POSTGRES_PASSWORD: ${DB_PASS:-whaticket123}
-      POSTGRES_DB: ${DB_NAME:-whaticket}
-      PGDATA: /var/lib/postgresql/data/pgdata
-    volumes:
-      - postgres_data_v2:/var/lib/postgresql/data
-    networks:
-      - whaticket-network
+version: '3.8'
 
+services:
+  # Banco de Dados PostgreSQL
+  postgres:
+    image: postgres:13
+    container_name: whaticket-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-whaticket}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-whaticket123}
+      POSTGRES_DB: ${POSTGRES_DB:-whaticket}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-whaticket}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-whaticket}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
 
-  # Redis Cache & Queue
+  # Redis para Cache e Filas
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123} --appendonly yes
+    container_name: whaticket-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_forte_123}
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - whaticket-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
@@ -37,82 +40,86 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
-    expose:
-      - "8080"
-
+      dockerfile: Dockerfile.easypanel
+    container_name: whaticket-backend
     environment:
-      # Node Environment
-      NODE_ENV: ${NODE_ENV:-production}
+      # URLs
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+      
+      # Ambiente
+      NODE_ENV: production
       PORT: 8080
       
-      # Database Configuration
+      # Banco de Dados
       DB_DIALECT: postgres
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USER: ${DB_USER:-whaticket}
-      DB_PASS: ${DB_PASS:-whaticket123}
-      DB_NAME: ${DB_NAME:-whaticket}
+      DB_USER: ${POSTGRES_USER:-whaticket}
+      DB_PASS: ${POSTGRES_PASSWORD:-whaticket123}
+      DB_NAME: ${POSTGRES_DB:-whaticket}
       
-      # Redis Configuration
-      REDIS_URI: redis://:${REDIS_PASSWORD:-redis123}@redis:6379
-      REDIS_OPT_LIMITER_MAX: ${REDIS_OPT_LIMITER_MAX:-1}
-      REDIS_OPT_LIMITER_DURATION: ${REDIS_OPT_LIMITER_DURATION:-3000}
+      # Redis
+      REDIS_URI: redis://redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis_forte_123}
+      REDIS_OPT_LIMITER_MAX: 1
+      REDIS_OPT_LIMITER_DURATION: 3000
       
-      # Application URLs
-      BACKEND_URL: ${BACKEND_URL:-http://localhost:8080}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       
-      # JWT Secrets
-      # JWT Secrets
-      JWT_SECRET: ${JWT_SECRET:-default_jwt_secret_change_me_in_prod}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-default_refresh_secret_change_me}
+      # Limites
+      USER_LIMIT: 10000
+      CONNECTIONS_LIMIT: 100000
+      CLOSED_SEND_BY_ME: true
+      HOURS_CLOSE_TICKETS_AUTO: 24
       
-      # Application Settings
-      USER_LIMIT: ${USER_LIMIT:-10000}
-      CONNECTIONS_LIMIT: ${CONNECTIONS_LIMIT:-100000}
-      CLOSED_SEND_BY_ME: ${CLOSED_SEND_BY_ME:-true}
+      # Webhook
+      VERIFY_TOKEN: whaticket_production
       
-      # Optional Integrations
-      GERENCIANET_SANDBOX: ${GERENCIANET_SANDBOX:-false}
-      GERENCIANET_CLIENT_ID: ${GERENCIANET_CLIENT_ID:-}
-      GERENCIANET_CLIENT_SECRET: ${GERENCIANET_CLIENT_SECRET:-}
-      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
-      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
-      
-    volumes:
-      - backend_public:/usr/src/app/public
-      - backend_wwebjs:/usr/src/app/.wwebjs_auth
-    networks:
-      - whaticket-network
+    ports:
+      - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
-    labels:
-      - "com.easypanel.service=backend"
+    restart: unless-stopped
+    volumes:
+      - backend_uploads:/app/public
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # Frontend Web Application
+  # Frontend React
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    expose:
-      - "80"
-
-    networks:
-      - whaticket-network
+    container_name: whaticket-frontend
+    environment:
+      REACT_APP_BACKEND_URL: ${BACKEND_URL}
+      REACT_APP_HOURS_CLOSE_TICKETS_AUTO: 24
+      GENERATE_SOURCEMAP: false
+    ports:
+      - "3000:80"
     depends_on:
       - backend
-    labels:
-      - "com.easypanel.service=frontend"
-
-networks:
-  whaticket-network: {}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
-  postgres_data_v2: {}
-  redis_data: {}
-  backend_public: {}
-  backend_wwebjs: {}
+  postgres_data:
+  redis_data:
+  backend_uploads:
+
+networks:
+  default:
+    name: whaticket-network
