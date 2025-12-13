@@ -17,7 +17,7 @@ module.exports = {
               updatedAt: new Date()
             }
           ],
-          { transaction: t }
+          { transaction: t, ignoreDuplicates: true }
         ),
         queryInterface.bulkInsert(
           "Companies",
@@ -30,7 +30,7 @@ module.exports = {
               updatedAt: new Date()
             }
           ],
-          { transaction: t }
+          { transaction: t, ignoreDuplicates: true }
         )
       ]);
     });

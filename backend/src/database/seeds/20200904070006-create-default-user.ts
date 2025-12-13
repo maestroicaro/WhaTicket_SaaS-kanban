@@ -20,7 +20,7 @@ module.exports = {
               super: true
             }
           ],
-          { transaction: t }
+          { transaction: t, ignoreDuplicates: true }
         )
       ]);
     });

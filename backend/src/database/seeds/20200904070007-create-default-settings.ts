@@ -87,7 +87,7 @@ module.exports = {
                         },
 
                     ],
-                    { transaction: t }
+                    { ignoreDuplicates: true, transaction: t }
                 )
             ]);
         });
