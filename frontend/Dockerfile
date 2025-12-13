@@ -16,8 +16,8 @@ RUN npm install && npm cache clean --force
 # Copiar código fonte
 COPY . .
 
-# Build da aplicação React (com fix para Node.js 18)
-RUN NODE_OPTIONS="--openssl-legacy-provider" npm run build
+# Build da aplicação React
+RUN npm run build
 
 # Estágio de produção com Nginx
 FROM nginx:alpine
