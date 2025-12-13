@@ -72,5 +72,17 @@ export const RunSeed = async (): Promise<string> => {
   } catch (error) {
     logs.push(`❌ Error: ${error}`);
   }
+    // 4. Dump State
+    const allPlans = await Plan.findAll();
+    logs.push("\n📊 Current Plans in DB:");
+    allPlans.forEach(p => logs.push(` - ID: ${p.id}, Name: ${p.name}`));
+
+    const allUsers = await User.findAll();
+    logs.push("\n👥 Current Users in DB:");
+    allUsers.forEach(u => logs.push(` - ID: ${u.id}, Email: ${u.email}, Company: ${u.companyId}, Super: ${u.super}`));
+
+  } catch (error) {
+    logs.push(`❌ Error: ${error}`);
+  }
   return logs.join("\n");
 };

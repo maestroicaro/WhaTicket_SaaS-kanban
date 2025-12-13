@@ -63,6 +63,7 @@
     "build": "react-scripts build",
     "winBuild": "set \"GENERATE_SOURCEMAP=false\" && react-scripts build",
     "test": "react-scripts test",
+    "test:api": "node test-api-connection.js",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
