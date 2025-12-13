@@ -1,0 +1,22 @@
+# Dockerfile com Node.js completo (não Alpine)
+FROM node:18
+
+# Instalar dependências
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copiar e instalar dependências
+COPY package*.json ./
+RUN npm install --production
+
+# Copiar código e buildar
+COPY . .
+RUN npm run build
+
+EXPOSE 8080
+CMD ["npm", "run", "start:production"]
