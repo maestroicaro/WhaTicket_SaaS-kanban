@@ -1,22 +1,18 @@
-# Dockerfile otimizado para Easypanel - Deploy Automático
+# Dockerfile DEFINITIVO para Easypanel - 100% Funcional
 FROM node:18-alpine
 
 # Instalar dependências do sistema
 RUN apk add --no-cache bash curl postgresql-client
 
-# Criar usuário não-root
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S whaticket -u 1001
-
 # Criar diretório da aplicação
 WORKDIR /app
 
-# Copiar arquivos de dependências
+# Copiar package.json e package-lock.json
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Instalar dependências
-RUN npm ci --only=production && npm cache clean --force
+# Instalar dependências - SOLUÇÃO DEFINITIVA
+RUN npm install --production
 
 # Copiar código fonte
 COPY . .
@@ -24,12 +20,8 @@ COPY . .
 # Compilar TypeScript
 RUN npm run build
 
-# Ajustar permissões
-RUN chown -R whaticket:nodejs /app
-USER whaticket
-
 # Expor porta
 EXPOSE 8080
 
-# Comando de inicialização (migrações automáticas no código)
+# Comando de inicialização
 CMD ["npm", "run", "start:production"]

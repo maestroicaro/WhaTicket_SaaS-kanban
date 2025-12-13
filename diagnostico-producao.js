@@ -83,6 +83,50 @@ class DiagnosticoProducao {
   }
 
   /**
+   * Teste 2.5: Verificar health check do backend
+   */
+  async testarHealthCheck() {
+    try {
+      console.log(`🏥 Testando health check: ${this.backendUrl}/api/health`);
+      
+      const response = await axios.get(`${this.backendUrl}/api/health`, {
+        timeout: this.timeout,
+        validateStatus: () => true
+      });
+
+      if (response.status === 200) {
+        return {
+          success: true,
+          message: "✅ Health check passou - backend totalmente funcional",
+          details: {
+            status: response.status,
+            health: response.data,
+            uptime: response.data?.uptime
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: `⚠️ Health check falhou (status ${response.status})`,
+          details: {
+            status: response.status,
+            response: response.data
+          }
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        message: "❌ Health check não acessível",
+        details: {
+          error: error.message,
+          suggestion: "Backend pode não estar inicializado corretamente"
+        }
+      };
+    }
+  }
+
+  /**
    * Teste 3: Verificar endpoint de login
    */
   async testarEndpointLogin() {
@@ -248,6 +292,7 @@ class DiagnosticoProducao {
     const testes = [
       { nome: "Frontend Acessível", metodo: () => this.testarFrontend() },
       { nome: "Backend Acessível", metodo: () => this.testarBackend() },
+      { nome: "Health Check Backend", metodo: () => this.testarHealthCheck() },
       { nome: "Endpoint de Login", metodo: () => this.testarEndpointLogin() },
       { nome: "CORS Configuration", metodo: () => this.testarCORS() },
       { nome: "Login Credenciais Padrão", metodo: () => this.testarLoginPadrao() }

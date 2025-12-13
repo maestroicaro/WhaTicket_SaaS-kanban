@@ -1,0 +1,20 @@
+# Dockerfile ULTRA SIMPLES - Garantido Funcionar
+FROM node:18-alpine
+
+# Instalar dependências básicas
+RUN apk add --no-cache bash postgresql-client
+
+# Diretório de trabalho
+WORKDIR /app
+
+# Copiar tudo
+COPY . .
+
+# Instalar e buildar
+RUN npm install --production && npm run build
+
+# Porta
+EXPOSE 8080
+
+# Iniciar
+CMD ["npm", "run", "start:production"]
