@@ -9,8 +9,7 @@ RUN apk add --no-cache \
     postgresql-client \
     python3 \
     make \
-    g++ \
-    && npm install -g npm@latest
+    g++
 
 WORKDIR /app
 

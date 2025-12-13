@@ -40,7 +40,7 @@ services:
   backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.node
     container_name: whaticket-backend
     environment:
       # URLs
