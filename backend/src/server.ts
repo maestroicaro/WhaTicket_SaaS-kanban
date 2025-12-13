@@ -13,38 +13,50 @@ import { hash } from "bcryptjs";
 const initSystem = async () => {
   try {
     // 1. Check/Create Plans
-    const plansCount = await Plan.count();
-    if (plansCount === 0) {
-      console.log("🔍 [Self-Healing] Plans table empty. Seeding defaults...");
-      await Plan.bulkCreate([
-        { id: 1, name: "Plano Individual", users: 1, connections: 1, queues: 3, value: 49.90 },
-        { id: 2, name: "Plano Plus", users: 5, connections: 3, queues: 10, value: 99.90 },
-        { id: 3, name: "Plano Pro", users: 10, connections: 10, queues: 20, value: 199.90 }
-      ]);
-      console.log("✅ [Self-Healing] Plans created.");
+    const plans = [
+      { id: 1, name: "Plano Individual", users: 1, connections: 1, queues: 3, value: 49.90 },
+      { id: 2, name: "Plano Plus", users: 5, connections: 3, queues: 10, value: 99.90 },
+      { id: 3, name: "Plano Pro", users: 10, connections: 10, queues: 20, value: 199.90 }
+    ];
+
+    for (const plan of plans) {
+      const [p, created] = await Plan.findOrCreate({
+        where: { id: plan.id },
+        defaults: plan
+      });
+      if (created) {
+        console.log(`✅ [Self-Healing] Plan '${plan.name}' created.`);
+      } else {
+        // Optional: Update existing plan to match defaults
+        // await p.update(plan);
+      }
     }
 
     // 2. Check/Create Company
-    let company = await Company.findOne({ where: { id: 1 } });
-    if (!company) {
-      console.log("🔍 [Self-Healing] Default Company (ID 1) missing. Creating...");
-      company = await Company.create({
+    const [company, companyCreated] = await Company.findOrCreate({
+      where: { id: 1 },
+      defaults: {
         id: 1,
         name: "Empresa Admin",
         planId: 1,
         dueDate: "2093-03-14 04:00:00+01"
-      });
-      console.log("✅ [Self-Healing] Company created.");
+      }
+    });
+
+    if (companyCreated) {
+      console.log("✅ [Self-Healing] Default Company (ID 1) created.");
     }
 
     // 3. Check/Create Admin User
-    const adminUser = await User.findOne({ where: { email: "admin@admin.com" } });
+    const adminEmail = "admin@admin.com";
+    const adminUser = await User.findOne({ where: { email: adminEmail } });
+
     if (!adminUser) {
       console.log("🔍 [Self-Healing] Admin user missing. Creating...");
       const passwordHash = await hash("123456", 8);
       await User.create({
         name: "Admin",
-        email: "admin@admin.com",
+        email: adminEmail,
         passwordHash,
         profile: "admin",
         super: true,
@@ -58,6 +70,9 @@ const initSystem = async () => {
         await adminUser.update({ companyId: 1 });
         console.log("✅ [Self-Healing] Admin user fixed.");
       }
+      // Optional: Reset password if needed (commented out to avoid resetting user changes)
+      // const passwordHash = await hash("123456", 8);
+      // await adminUser.update({ passwordHash });
     }
   } catch (error) {
     console.error("❌ [Self-Healing] Error:", error);
