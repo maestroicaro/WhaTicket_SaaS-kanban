@@ -1,5 +1,5 @@
 # Dockerfile simplificado para Frontend React - Easypanel
-FROM node:18-alpine as builder
+FROM node:16-alpine as builder
 
 # Instalar dependências do sistema
 RUN apk add --no-cache bash
