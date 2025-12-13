@@ -72,6 +72,8 @@ export const RunSeed = async (): Promise<string> => {
   } catch (error) {
     logs.push(`❌ Error: ${error}`);
   }
+
+  try {
     // 4. Dump State
     const allPlans = await Plan.findAll();
     logs.push("\n📊 Current Plans in DB:");
