@@ -19,6 +19,11 @@ export const log = async (req: Request, res: Response): Promise<Response> => {
 };
 
 
+type IndexQuery = {
+  searchParam: string;
+  pageNumber: string;
+};
+
 type StorePlanData = {
   name: string;
   id?: number | string;
