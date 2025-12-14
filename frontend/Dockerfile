@@ -1,5 +1,5 @@
 # Dockerfile simplificado para Frontend React - Easypanel
-FROM node:16-alpine AS builder
+FROM node:18-alpine AS builder
 
 # Instalar dependências do sistema
 RUN apk add --no-cache bash
@@ -8,7 +8,7 @@ RUN apk add --no-cache bash
 WORKDIR /app
 
 # Aumentar limite de memória do Node e desabilitar ESLint no build
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV NODE_OPTIONS="--max-old-space-size=4096 --openssl-legacy-provider"
 ENV DISABLE_ESLINT_PLUGIN=true
 ENV GENERATE_SOURCEMAP=false
 
