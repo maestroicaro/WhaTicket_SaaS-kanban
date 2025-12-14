@@ -1,11 +1,17 @@
 # Dockerfile simplificado para Frontend React - Easypanel
-FROM node:16-alpine as builder
+FROM node:16-alpine AS builder
 
 # Instalar dependências do sistema
 RUN apk add --no-cache bash
 
 # Criar diretório da aplicação
 WORKDIR /app
+
+# Aumentar limite de memória do Node e desabilitar ESLint no build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+ENV DISABLE_ESLINT_PLUGIN=true
+ENV GENERATE_SOURCEMAP=false
+
 
 # Copiar arquivos de dependências
 COPY package*.json ./
@@ -39,15 +45,15 @@ RUN echo 'server { \
     \
     # SPA support - redirect all to index.html \
     location / { \
-        try_files $uri $uri/ /index.html; \
+    try_files $uri $uri/ /index.html; \
     } \
     \
     # Cache static assets \
     location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ { \
-        expires 1y; \
-        add_header Cache-Control "public, immutable"; \
+    expires 1y; \
+    add_header Cache-Control "public, immutable"; \
     } \
-}' > /etc/nginx/conf.d/default.conf
+    }' > /etc/nginx/conf.d/default.conf
 
 # Expor porta
 EXPOSE 80
